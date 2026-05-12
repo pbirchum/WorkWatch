@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkWatch</title>
+
+  <!-- Firebase SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════ */
+    :root {
+      --bg:         #0d1117;
+      --surface:    #161b22;
+      --surface2:   #21262d;
+      --border:     #30363d;
+      --accent:     #7c3aed;
+      --accent-lt:  #a78bfa;
+      --accent2:    #ec4899;
+      --text:       #f0f6fc;
+      --text2:      #8b949e;
+      --green:      #3fb950;
+      --red:        #f85149;
+      --orange:     #e3b341;
+      --r:          10px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MAIN LAYOUT
+    ═══════════════════════════════════════════════ */
+    #app {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 28px 16px 60px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MINI MODE  (pop-out window)
+    ═══════════════════════════════════════════════ */
+    body.mini-mode { overflow: hidden; }
+    body.mini-mode #app { display: none; }
+
+    #mini-view {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg);
+      padding: 10px;
+      position: relative;
+    }
+    body.mini-mode #mini-view { display: flex; }
+
+    .mini-name {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+    .mini-clock {
+      font-size: 38px;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -1px;
+      color: var(--text);
+      transition: color .3s;
+    }
+    .mini-clock.running { color: var(--green); }
+
+    .mini-btns { display: flex; gap: 8px; }
+
+    /* Still-working toast in mini window */
+    #mini-check-bar {
+      display: none;
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--orange);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      padding: 6px 8px;
+      cursor: pointer;
+      z-index: 99;
+    }
+    #mini-check-bar.visible { display: block; }
+
+    /* ═══════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════ */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(120deg, var(--accent-lt) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+    }
+
+    /* ---- User switcher ---- */
+    .user-switch {
+      display: flex;
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .user-tab {
+      padding: 5px 16px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .user-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Settings gear */
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--text2);
+      font-size: 15px;
+      cursor: pointer;
+      transition: color .2s, border-color .2s;
+      line-height: 1;
+    }
+    .icon-btn:hover { color: var(--text); border-color: var(--text2); }
+
+    /* ═══════════════════════════════════════════════
+       FIREBASE BANNER
+    ═══════════════════════════════════════════════ */
+    #firebase-banner {
+      display: none;
+      background: #2d1f00;
+      border: 1px solid var(--orange);
+      color: var(--orange);
+      border-radius: var(--r);
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    #firebase-banner a { color: var(--orange); }
+    #firebase-banner.visible { display: block; }
+
+    /* ═══════════════════════════════════════════════
+       TIMER CARD
+    ═══════════════════════════════════════════════ */
+    .timer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 36px 24px 28px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .timer-status {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 14px;
+      height: 16px;
+    }
+
+    .timer-clock {
+      font-size: 72px;
+      font-weight: 200;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -3px;
+      line-height: 1;
+      margin-bottom: 28px;
+      transition: color .3s;
+      color: var(--text);
+    }
+    .timer-clock.running { color: var(--green); }
+
+    .timer-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ═══════════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+
+    .btn-primary   { background: var(--accent);  color: #fff; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-danger    { background: var(--red);     color: #fff; }
+    .btn-danger:hover  { opacity: .88; }
+    .btn-ghost     {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--text2); }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-xs { padding: 4px 10px; font-size: 11px; }
+
+    /* ═══════════════════════════════════════════════
+       STATS ROW
+    ═══════════════════════════════════════════════ */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-lt);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+    /* Progress bar under stat */
+    .stat-bar {
+      height: 3px;
+      background: var(--surface2);
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .stat-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width .6s ease;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SESSION LOG SECTION
+    ═══════════════════════════════════════════════ */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .section-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text2);
+    }
+
+    .session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .session-row:last-child { border-bottom: none; }
+    .session-time { font-size: 12px; color: var(--text2); }
+    .session-note { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .session-dur  { font-weight: 700; color: var(--accent-lt); font-size: 13px; }
+    .session-manual {
+      font-size: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text2);
+      margin-left: 6px;
+    }
+
+    .empty-state {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 14px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MODALS
+    ═══════════════════════════════════════════════ */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .modal h2 {
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+    .modal .sub {
+      color: var(--text2);
+      font-size: 13px;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 22px;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .5px;
+      color: var(--text2);
+      margin-bottom: 5px;
+    }
+    .field input, .field select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field select option { background: var(--surface2); }
+
+    .field-row { display: flex; gap: 12px; }
+    .field-row .field { flex: 1; }
+
+    /* ─── Still-working modal ─── */
+    #still-working-modal .emoji {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    #still-working-modal { text-align: center; }
+    #still-working-modal .sub { text-align: left; }
+
+    .countdown-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 3px solid var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 6px;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--orange);
+      font-variant-numeric: tabular-nums;
+    }
+    .countdown-label {
+      font-size: 11px;
+      color: var(--text2);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* ─── Settings modal ─── */
+    .setting-note {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: -10px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* ─── Schedule grid (settings) ─── */
+    .sched-section { margin-top: 20px; }
+    .sched-user-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sched-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-bottom: 6px;
+    }
+    .sched-day { text-align: center; }
+    .sched-day label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 3px;
+    }
+    .sched-day input {
+      width: 100%;
+      text-align: center;
+      padding: 6px 2px;
+      font-size: 13px;
+    }
+    .sched-total {
+      font-size: 11px;
+      color: var(--text2);
+      text-align: right;
+      margin-bottom: 14px;
+    }
+    .sched-total span { color: var(--accent-lt); font-weight: 700; }
+
+    /* ─── Stat goal sub-label ─── */
+    .stat-goal {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 1px;
+      font-variant-numeric: tabular-nums;
+      min-height: 13px;
+    }
+
+    /* ─── Week at a Glance ─── */
+    .week-view-wrap { padding: 12px 16px 10px; }
+    .week-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+    }
+    .week-row.is-today {
+      background: rgba(124,58,237,.07);
+      border-radius: 6px;
+      padding: 6px 6px;
+      margin: 0 -6px;
+    }
+    .week-day-label {
+      font-size: 12px;
+      color: var(--text2);
+      width: 30px;
+      flex-shrink: 0;
+    }
+    .week-day-label.active { color: var(--accent-lt); font-weight: 700; }
+    .week-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .week-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .5s ease;
+    }
+    .week-bar-rest {
+      height: 100%;
+      background: repeating-linear-gradient(
+        90deg, var(--border) 0, var(--border) 3px, transparent 3px, transparent 7px
+      );
+    }
+    .week-right {
+      font-size: 12px;
+      width: 110px;
+      text-align: right;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .week-total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0 2px;
+      margin-top: 6px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .week-total-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text2);
+    }
+
+    /* ═══════════════════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ═══════════════════════════════════════════════
+       COLORIZE dot when timer active
+    ═══════════════════════════════════════════════ */
+    .pulse-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1.4s infinite;
+      vertical-align: middle;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MINI VIEW  (pop-out corner window)
+═══════════════════════════════════════════════════════════════ -->
+<div id="mini-view">
+  <div class="mini-name" id="mini-name">Porter</div>
+  <div class="mini-clock" id="mini-clock">00:00:00</div>
+  <div class="mini-btns">
+    <button class="btn btn-primary btn-sm" id="mini-start-btn" onclick="miniToggle()">▶ Start</button>
+    <button class="btn btn-ghost btn-xs" onclick="openFull()" title="Open full window">↑ Full</button>
+  </div>
+  <div id="mini-check-bar" onclick="respondStillWorking(true)">
+    Still working? Tap YES — auto-stop in <span id="mini-cd">120</span>s
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">⏱ WorkWatch</div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="user-switch">
+        <button class="user-tab active" id="tab-porter"   onclick="switchUser('porter')">Porter</button>
+        <button class="user-tab"        id="tab-bethany"  onclick="switchUser('bethany')">Bethany</button>
+      </div>
+      <button class="icon-btn" onclick="openSettings()" title="Settings">⚙</button>
+    </div>
+  </div>
+
+  <!-- Firebase not-configured banner -->
+  <div id="firebase-banner">
+    ⚠️ <strong>Firebase not connected.</strong> Sessions are saved locally only (localStorage).
+    To sync across devices and browsers, add your Firebase config in the <code>&lt;script&gt;</code> section at the bottom of this file.
+    <a href="https://console.firebase.google.com" target="_blank" rel="noopener">Open Firebase Console →</a>
+  </div>
+
+  <!-- Timer card -->
+  <div class="timer-card">
+    <div class="timer-status" id="timer-status">Ready to work</div>
+    <div class="timer-clock" id="timer-clock">00:00:00</div>
+    <div class="timer-actions">
+      <button class="btn btn-primary" id="start-btn" onclick="toggleTimer()">▶ Start</button>
+      <button class="btn btn-ghost"   onclick="openPopout()"    title="Open mini timer in a small window">↗ Pop Out</button>
+      <button class="btn btn-ghost"   onclick="openManualAdd()" title="Log time you forgot to track">+ Add Time</button>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-today">0h 0m</div>
+      <div class="stat-goal"  id="goal-today"></div>
+      <div class="stat-label">Today</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="bar-today" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-week">0h 0m</div>
+      <div class="stat-goal"  id="goal-week"></div>
+      <div class="stat-label">This Week</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="bar-week" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-month">0h 0m</div>
+      <div class="stat-goal"  id="goal-month"></div>
+      <div class="stat-label">This Month</div>
+      <div class="stat-bar"><div class="stat-bar-fill" id="bar-month" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Week at a Glance -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">Week at a Glance</span>
+      <span id="week-glance-user" style="font-size:12px;color:var(--accent-lt)"></span>
+    </div>
+    <div class="week-view-wrap" id="week-view"></div>
+  </div>
+
+  <!-- Session log -->
+  <div class="section">
+    <div class="section-head">
+      <span class="section-title">Today's Sessions</span>
+      <select id="log-user-select" onchange="renderStats()" style="
+        background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+        border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;">
+        <option value="current">Current user</option>
+        <option value="all">Both users</option>
+      </select>
+    </div>
+    <div id="session-log">
+      <div class="empty-state">No sessions today. Start the timer to begin tracking.</div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STILL WORKING? MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="still-working-modal">
+  <div class="modal" id="still-working-box">
+    <div class="emoji">⏰</div>
+    <h2>Still working?</h2>
+    <p class="sub">
+      You've been working for an hour. The timer will stop automatically if you don't respond.
+    </p>
+    <div class="countdown-circle" id="countdown-num">120</div>
+    <div class="countdown-label">seconds until auto-stop</div>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button class="btn btn-danger"   onclick="respondStillWorking(false)">⏹ Stop Timer</button>
+      <button class="btn btn-primary"  onclick="respondStillWorking(true)">✓ Still Working</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MANUAL ADD MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="manual-add-modal">
+  <div class="modal">
+    <h2>Add Time Manually</h2>
+    <p class="sub">Log a work session you forgot to start the timer for.</p>
+
+    <div class="field">
+      <label>User</label>
+      <select id="manual-user">
+        <option value="porter">Porter</option>
+        <option value="bethany">Bethany</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="manual-date">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Start Time</label>
+        <input type="time" id="manual-start">
+      </div>
+      <div class="field">
+        <label>End Time</label>
+        <input type="time" id="manual-end">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Note <span style="font-weight:400">(optional)</span></label>
+      <input type="text" id="manual-note" placeholder="e.g. Client calls, deep work…">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost"    onclick="closeOverlay('manual-add-modal')">Cancel</button>
+      <button class="btn btn-primary"  onclick="saveManualEntry()">Add Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SETTINGS MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="settings-modal">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub">Changes are saved automatically to this browser.</p>
+
+    <div class="field-row">
+      <div class="field">
+        <label>User 1 Name</label>
+        <input type="text" id="name-user1" placeholder="Porter">
+      </div>
+      <div class="field">
+        <label>User 2 Name</label>
+        <input type="text" id="name-user2" placeholder="Bethany">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Hourly Check Interval (minutes)</label>
+      <input type="number" id="check-interval" min="15" max="240" step="5" value="60">
+    </div>
+    <p class="setting-note">How often the "Still working?" prompt appears. Default: 60 min.</p>
+
+    <!-- Per-user weekly schedules -->
+    <div class="sched-section">
+      <div class="sched-user-label" style="color:var(--accent-lt)" id="sched-lbl-porter">Porter's Weekly Schedule (hours/day)</div>
+      <div class="sched-grid">
+        <div class="sched-day"><label>Mon</label><input type="number" id="sched-porter-mon" min="0" max="24" step="0.5" value="8" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Tue</label><input type="number" id="sched-porter-tue" min="0" max="24" step="0.5" value="8" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Wed</label><input type="number" id="sched-porter-wed" min="0" max="24" step="0.5" value="8" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Thu</label><input type="number" id="sched-porter-thu" min="0" max="24" step="0.5" value="8" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Fri</label><input type="number" id="sched-porter-fri" min="0" max="24" step="0.5" value="8" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Sat</label><input type="number" id="sched-porter-sat" min="0" max="24" step="0.5" value="0" oninput="updateSchedTotal('porter')"></div>
+        <div class="sched-day"><label>Sun</label><input type="number" id="sched-porter-sun" min="0" max="24" step="0.5" value="0" oninput="updateSchedTotal('porter')"></div>
+      </div>
+      <div class="sched-total">Weekly target: <span id="sched-total-porter">40h</span></div>
+
+      <div class="sched-user-label" style="color:var(--accent2)" id="sched-lbl-bethany">Bethany's Weekly Schedule (hours/day)</div>
+      <div class="sched-grid">
+        <div class="sched-day"><label>Mon</label><input type="number" id="sched-bethany-mon" min="0" max="24" step="0.5" value="6" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Tue</label><input type="number" id="sched-bethany-tue" min="0" max="24" step="0.5" value="6" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Wed</label><input type="number" id="sched-bethany-wed" min="0" max="24" step="0.5" value="6" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Thu</label><input type="number" id="sched-bethany-thu" min="0" max="24" step="0.5" value="6" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Fri</label><input type="number" id="sched-bethany-fri" min="0" max="24" step="0.5" value="6" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Sat</label><input type="number" id="sched-bethany-sat" min="0" max="24" step="0.5" value="4" oninput="updateSchedTotal('bethany')"></div>
+        <div class="sched-day"><label>Sun</label><input type="number" id="sched-bethany-sun" min="0" max="24" step="0.5" value="4" oninput="updateSchedTotal('bethany')"></div>
+      </div>
+      <div class="sched-total">Weekly target: <span id="sched-total-bethany">38h</span></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost"   onclick="closeOverlay('settings-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────────────────────────
+   ⚙️  FIREBASE CONFIGURATION
+   ─────────────────────────────────────────────────────────────────
+   1. Go to https://console.firebase.google.com
+   2. Create (or open) a project
+   3. Add a Web App → copy the config object below
+   4. In Firestore, create a database (test mode is fine to start)
+   ───────────────────────────────────────────────────────────────── */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyD0IxbF20aZlJxvaugsNWOv5FlWKzQ1KHs",
+  authDomain:        "workwatch-8c031.firebaseapp.com",
+  databaseURL:       "https://workwatch-8c031-default-rtdb.firebaseio.com",
+  projectId:         "workwatch-8c031",
+  storageBucket:     "workwatch-8c031.firebasestorage.app",
+  messagingSenderId: "234857621788",
+  appId:             "1:234857621788:web:2609944f9ae315179b32d9"
+};
+
+/* ─────────────────────────────────────────────────────────────────
+   🔥  FIREBASE INIT
+   ───────────────────────────────────────────────────────────────── */
+let db = null;
+let fbReady = false;
+
+function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return; // placeholder — skip
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    // Enable offline persistence
+    db.enablePersistence().catch(() => {});
+    fbReady = true;
+  } catch (e) {
+    console.warn('Firebase init error:', e.message);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   💾  LOCAL STORAGE  (primary when Firebase not configured)
+   ───────────────────────────────────────────────────────────────── */
+const LS_SESSIONS  = 'ww_sessions_v2';
+const LS_STATE     = 'ww_state_v2';
+const LS_SETTINGS  = 'ww_settings_v1';
+
+function lsGet(key, fallback = null) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ⚙️  SETTINGS
+   ───────────────────────────────────────────────────────────────── */
+const DAYS = ['mon','tue','wed','thu','fri','sat','sun'];
+const DEFAULT_SCHEDULES = {
+  porter:  { mon:8, tue:8, wed:8, thu:8, fri:8, sat:0, sun:0 },
+  bethany: { mon:6, tue:6, wed:6, thu:6, fri:6, sat:4, sun:4 }
+};
+
+let settings = {
+  names:            { porter: 'Porter', bethany: 'Bethany' },
+  checkIntervalMin: 60,
+  schedules:        { porter: {...DEFAULT_SCHEDULES.porter}, bethany: {...DEFAULT_SCHEDULES.bethany} }
+};
+
+function loadSettings() {
+  const saved = lsGet(LS_SETTINGS, {});
+  // Deep merge schedules so partial saves don't lose days
+  if (saved.schedules) {
+    saved.schedules.porter  = { ...DEFAULT_SCHEDULES.porter,  ...(saved.schedules.porter  || {}) };
+    saved.schedules.bethany = { ...DEFAULT_SCHEDULES.bethany, ...(saved.schedules.bethany || {}) };
+  }
+  settings = { ...settings, ...saved };
+  if (!settings.names)     settings.names     = { porter: 'Porter', bethany: 'Bethany' };
+  if (!settings.schedules) settings.schedules = { porter: {...DEFAULT_SCHEDULES.porter}, bethany: {...DEFAULT_SCHEDULES.bethany} };
+  applyNames();
+}
+
+function applyNames() {
+  el('tab-porter').textContent  = settings.names.porter;
+  el('tab-bethany').textContent = settings.names.bethany;
+  // Keep schedule labels in sync with names
+  const lp = el('sched-lbl-porter'),  lb = el('sched-lbl-bethany');
+  if (lp) lp.textContent = `${settings.names.porter}'s Weekly Schedule (hours/day)`;
+  if (lb) lb.textContent = `${settings.names.bethany}'s Weekly Schedule (hours/day)`;
+}
+
+function openSettings() {
+  el('name-user1').value     = settings.names.porter;
+  el('name-user2').value     = settings.names.bethany;
+  el('check-interval').value = settings.checkIntervalMin;
+  // Populate schedule grids
+  ['porter','bethany'].forEach(uid => {
+    DAYS.forEach(d => {
+      const inp = el(`sched-${uid}-${d}`);
+      if (inp) inp.value = settings.schedules[uid]?.[d] ?? 0;
+    });
+    updateSchedTotal(uid);
+  });
+  openOverlay('settings-modal');
+}
+
+function saveSettings() {
+  settings.names.porter     = el('name-user1').value.trim() || 'Porter';
+  settings.names.bethany    = el('name-user2').value.trim() || 'Bethany';
+  settings.checkIntervalMin = parseInt(el('check-interval').value) || 60;
+  // Read schedule grids
+  ['porter','bethany'].forEach(uid => {
+    if (!settings.schedules[uid]) settings.schedules[uid] = {};
+    DAYS.forEach(d => {
+      const inp = el(`sched-${uid}-${d}`);
+      settings.schedules[uid][d] = parseFloat(inp?.value ?? 0) || 0;
+    });
+  });
+  lsSet(LS_SETTINGS, settings);
+  applyNames();
+  closeOverlay('settings-modal');
+  renderStats();
+}
+
+// Live-update the weekly total as user types in schedule grid
+function updateSchedTotal(uid) {
+  const total = DAYS.reduce((sum, d) => sum + (parseFloat(el(`sched-${uid}-${d}`)?.value || 0) || 0), 0);
+  const span = el(`sched-total-${uid}`);
+  if (span) span.textContent = `${total % 1 === 0 ? total : total.toFixed(1)}h`;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📡  BROADCAST CHANNEL  (cross-window sync)
+   ───────────────────────────────────────────────────────────────── */
+let ch = null;
+try { ch = new BroadcastChannel('workwatch_v3'); ch.onmessage = onBroadcast; } catch {}
+
+function broadcast(msg) { try { ch?.postMessage(msg); } catch {} }
+
+function onBroadcast({ data: msg }) {
+  switch (msg.type) {
+    case 'timer-started':
+      if (msg.startTime) {
+        state.running   = true;
+        state.startTime = msg.startTime;
+        state.userId    = msg.userId;
+        lsSet(LS_STATE, state);
+        startLoop();
+        updateUI();
+      }
+      break;
+    case 'timer-stopped':
+      _stopDisplay();
+      updateUI();
+      if (!isMini) renderStats();
+      break;
+    case 'still-check':
+      showStillWorkingModal();
+      break;
+    case 'still-response':
+      _handleStillInternal(msg.continuing, false);
+      break;
+    case 'stats-changed':
+      if (!isMini) renderStats();
+      break;
+    case 'user-switched':
+      state.userId = msg.userId;
+      lsSet(LS_STATE, state);
+      if (!isMini) {
+        updateUserTabs();
+        renderStats();
+      } else {
+        el('mini-name').textContent = settings.names[state.userId] || state.userId;
+      }
+      break;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ⏱  STATE
+   ───────────────────────────────────────────────────────────────── */
+let state = { userId: 'porter', running: false, startTime: null };
+
+function loadTimerState() {
+  const s = lsGet(LS_STATE, {});
+  state = { ...state, ...s };
+  if (state.running && !state.startTime) state.running = false; // sanity
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ⏱  TIMER CORE
+   ───────────────────────────────────────────────────────────────── */
+let displayLoop = null;
+let hourlyTimeout = null;
+let stillCdInterval = null;
+
+const isMini = new URLSearchParams(location.search).get('mini') === '1';
+const WINDOW_ID = Math.random().toString(36).slice(2);
+
+function elapsed() {
+  if (!state.running || !state.startTime) return 0;
+  return Math.floor((Date.now() - new Date(state.startTime).getTime()) / 1000);
+}
+
+function fmtSecs(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+}
+
+function fmtHm(totalSecs) {
+  const h = Math.floor(totalSecs / 3600), m = Math.floor((totalSecs % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function toggleTimer() {
+  state.running ? doStop(true) : doStart();
+}
+
+function doStart() {
+  state.running   = true;
+  state.startTime = new Date().toISOString();
+  state.startedBy = WINDOW_ID;
+  lsSet(LS_STATE, state);
+  startLoop();
+  scheduleHourlyCheck(settings.checkIntervalMin * 60 * 1000);
+  updateUI();
+  broadcast({ type: 'timer-started', startTime: state.startTime, userId: state.userId });
+}
+
+function doStop(save = true) {
+  if (!state.running) return;
+  const t0 = new Date(state.startTime);
+  const t1 = new Date();
+  _stopDisplay();
+
+  if (save) {
+    const session = buildSession(state.userId, t0, t1, '', false);
+    saveSession(session);
+    broadcast({ type: 'timer-stopped' });
+    renderStats();
+    broadcast({ type: 'stats-changed' });
+  }
+  updateUI();
+}
+
+function _stopDisplay() {
+  state.running   = false;
+  state.startTime = null;
+  lsSet(LS_STATE, state);
+  clearDisplayLoop();
+  clearHourlyCheck();
+}
+
+function startLoop() {
+  clearDisplayLoop();
+  tick();
+  displayLoop = setInterval(tick, 1000);
+}
+
+function clearDisplayLoop() {
+  clearInterval(displayLoop);
+  displayLoop = null;
+}
+
+function tick() {
+  const s = elapsed();
+  const fmt = fmtSecs(s);
+  if (isMini) {
+    el('mini-clock').textContent = fmt;
+    el('mini-clock').classList.toggle('running', state.running);
+  } else {
+    el('timer-clock').textContent = fmt;
+    el('timer-clock').classList.toggle('running', state.running);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ⏰  HOURLY "STILL WORKING?" CHECK
+   ───────────────────────────────────────────────────────────────── */
+let stillCd = 120;
+
+function scheduleHourlyCheck(delayMs) {
+  clearHourlyCheck();
+  hourlyTimeout = setTimeout(() => {
+    showStillWorkingModal();
+    broadcast({ type: 'still-check' });
+  }, delayMs);
+}
+
+function clearHourlyCheck() {
+  clearTimeout(hourlyTimeout);
+  clearInterval(stillCdInterval);
+  hourlyTimeout = null;
+}
+
+function showStillWorkingModal() {
+  stillCd = 120;
+
+  if (isMini) {
+    el('mini-check-bar').classList.add('visible');
+    el('mini-cd').textContent = stillCd;
+  } else {
+    el('countdown-num').textContent = stillCd;
+    openOverlay('still-working-modal');
+  }
+
+  sendNotification('Still working?',
+    `Your timer has been running for ${settings.checkIntervalMin} min. Click to respond.`);
+
+  clearInterval(stillCdInterval);
+  stillCdInterval = setInterval(() => {
+    stillCd--;
+    if (isMini) el('mini-cd').textContent = stillCd;
+    else        el('countdown-num').textContent = stillCd;
+
+    if (stillCd <= 0) {
+      clearInterval(stillCdInterval);
+      _handleStillInternal(false, true);
+    }
+  }, 1000);
+}
+
+function respondStillWorking(continuing) {
+  _handleStillInternal(continuing, true);
+}
+
+function _handleStillInternal(continuing, shouldBroadcast) {
+  clearInterval(stillCdInterval);
+  closeOverlay('still-working-modal');
+  el('mini-check-bar')?.classList.remove('visible');
+
+  if (shouldBroadcast) broadcast({ type: 'still-response', continuing });
+
+  if (continuing) {
+    scheduleHourlyCheck(settings.checkIntervalMin * 60 * 1000);
+  } else {
+    doStop(true);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🔔  BROWSER NOTIFICATIONS
+   ───────────────────────────────────────────────────────────────── */
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, tag: 'ww-check' });
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   💽  SESSIONS  (local + Firebase)
+   ───────────────────────────────────────────────────────────────── */
+function buildSession(userId, t0, t1, note = '', manual = false) {
+  const d = new Date(t0);
+  return {
+    id:              `${userId}_${t0.toISOString()}`,
+    userId,
+    date:            dateKey(t0),
+    week:            weekKey(t0),
+    month:           monthKey(t0),
+    startTime:       t0.toISOString(),
+    endTime:         t1.toISOString(),
+    durationSeconds: Math.floor((t1 - t0) / 1000),
+    note,
+    manual,
+    savedAt:         new Date().toISOString()
+  };
+}
+
+function saveSession(session) {
+  // Local
+  const all = lsGet(LS_SESSIONS, []);
+  const idx = all.findIndex(s => s.id === session.id);
+  if (idx === -1) all.push(session); else all[idx] = session;
+  lsSet(LS_SESSIONS, all);
+
+  // Firebase
+  if (fbReady) {
+    db.collection('sessions').doc(session.id).set({
+      ...session,
+      startTime: firebase.firestore.Timestamp.fromDate(new Date(session.startTime)),
+      endTime:   firebase.firestore.Timestamp.fromDate(new Date(session.endTime)),
+      savedAt:   firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(console.warn);
+  }
+}
+
+async function fetchSessions(userId, field, value) {
+  // Prefer Firebase when ready
+  if (fbReady) {
+    try {
+      const snap = await db.collection('sessions')
+        .where('userId', '==', userId)
+        .where(field, '==', value)
+        .get();
+      return snap.docs.map(d => {
+        const data = d.data();
+        // Convert Timestamps → ISO strings for uniform handling
+        if (data.startTime?.toDate) data.startTime = data.startTime.toDate().toISOString();
+        if (data.endTime?.toDate)   data.endTime   = data.endTime.toDate().toISOString();
+        return data;
+      });
+    } catch (e) {
+      console.warn('Firebase read failed, using local:', e.message);
+    }
+  }
+  // Fallback: localStorage
+  return lsGet(LS_SESSIONS, []).filter(s => s.userId === userId && s[field] === value);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ➕  MANUAL TIME ENTRY
+   ───────────────────────────────────────────────────────────────── */
+function openManualAdd() {
+  el('manual-user').value  = state.userId;
+  el('manual-date').value  = dateKey(new Date());
+  el('manual-start').value = '';
+  el('manual-end').value   = '';
+  el('manual-note').value  = '';
+  openOverlay('manual-add-modal');
+}
+
+async function saveManualEntry() {
+  const userId    = el('manual-user').value;
+  const dateStr   = el('manual-date').value;
+  const startStr  = el('manual-start').value;
+  const endStr    = el('manual-end').value;
+  const note      = el('manual-note').value.trim();
+
+  if (!dateStr || !startStr || !endStr) {
+    alert('Please fill in date, start time, and end time.'); return;
+  }
+
+  const t0 = new Date(`${dateStr}T${startStr}`);
+  const t1 = new Date(`${dateStr}T${endStr}`);
+
+  if (t1 <= t0) { alert('End time must be after start time.'); return; }
+
+  const session = buildSession(userId, t0, t1, note, true);
+  saveSession(session);
+  closeOverlay('manual-add-modal');
+  await renderStats();
+  broadcast({ type: 'stats-changed' });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📊  SCHEDULE HELPERS
+   ───────────────────────────────────────────────────────────────── */
+function getDayGoalSecs(userId, date) {
+  const dow = DAYS[(date.getDay() + 6) % 7]; // Mon=0 … Sun=6
+  return (settings.schedules?.[userId]?.[dow] ?? 0) * 3600;
+}
+
+function getWeeklyGoalSecs(userId) {
+  return DAYS.reduce((sum, d) => sum + (settings.schedules?.[userId]?.[d] ?? 0) * 3600, 0);
+}
+
+function fmtH(secs) {
+  const h = secs / 3600;
+  return `${h % 1 === 0 ? h : h.toFixed(1)}h`;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📊  STATS & LOG
+   ───────────────────────────────────────────────────────────────── */
+async function renderStats() {
+  const uid   = state.userId;
+  const now   = new Date();
+  const today = dateKey(now);
+  const wk    = weekKey(now);
+  const mo    = monthKey(now);
+
+  const [dayS, wkS, moS] = await Promise.all([
+    fetchSessions(uid, 'date', today),
+    fetchSessions(uid, 'week', wk),
+    fetchSessions(uid, 'month', mo)
+  ]);
+
+  const cur = state.running ? elapsed() : 0;
+
+  const daySecs  = dayS.reduce((a, s) => a + s.durationSeconds, 0) + cur;
+  const wkSecs   = wkS.reduce((a, s)  => a + s.durationSeconds, 0) + cur;
+  const moSecs   = moS.reduce((a, s)  => a + s.durationSeconds, 0) + cur;
+
+  const dayGoal  = getDayGoalSecs(uid, now);
+  const wkGoal   = getWeeklyGoalSecs(uid);
+  const moGoal   = wkGoal * 4.33;
+
+  // Stat values
+  el('stat-today').textContent = fmtHm(daySecs);
+  el('stat-week').textContent  = fmtHm(wkSecs);
+  el('stat-month').textContent = fmtHm(moSecs);
+
+  // Goal sub-labels (show only when a goal is set)
+  el('goal-today').textContent  = dayGoal > 0 ? `/ ${fmtH(dayGoal)} goal` : '';
+  el('goal-week').textContent   = wkGoal  > 0 ? `/ ${fmtH(wkGoal)} goal`  : '';
+  el('goal-month').textContent  = moGoal  > 0 ? `/ ${fmtH(moGoal)} goal`  : '';
+
+  // Progress bars
+  const pct = (actual, goal) => goal > 0 ? `${Math.min(100, actual / goal * 100).toFixed(1)}%` : '0%';
+  el('bar-today').style.width  = pct(daySecs, dayGoal);
+  el('bar-week').style.width   = pct(wkSecs,  wkGoal);
+  el('bar-month').style.width  = pct(moSecs,  moGoal);
+
+  // Update week label
+  const wgl = el('week-glance-user');
+  if (wgl) wgl.textContent = settings.names[uid] || uid;
+
+  renderLog(dayS);
+  renderWeeklyView(wkS);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📅  WEEK AT A GLANCE
+   ───────────────────────────────────────────────────────────────── */
+function renderWeeklyView(weekSessions) {
+  const container = el('week-view');
+  if (!container) return;
+
+  const uid    = state.userId;
+  const today  = dateKey(new Date());
+
+  // Monday of current ISO week
+  const now   = new Date();
+  const dow   = now.getDay();                         // 0=Sun
+  const diff  = (dow === 0) ? -6 : 1 - dow;
+  const mon   = new Date(now);
+  mon.setDate(now.getDate() + diff);
+  mon.setHours(0, 0, 0, 0);
+
+  // Group completed sessions by date
+  const byDate = {};
+  weekSessions.forEach(s => { byDate[s.date] = (byDate[s.date] || 0) + s.durationSeconds; });
+  if (state.running) byDate[today] = (byDate[today] || 0) + elapsed();
+
+  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  let html = '';
+  let totalActual = 0, totalGoal = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const d      = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    const dk     = dateKey(d);
+    const dow2   = DAYS[i];
+    const label  = DAY_LABELS[i];
+    const goalSecs   = (settings.schedules?.[uid]?.[dow2] ?? 0) * 3600;
+    const actualSecs = byDate[dk] || 0;
+    const isToday    = dk === today;
+    const isFuture   = dk > today;
+    const isRest     = goalSecs === 0;
+    const pct        = goalSecs > 0 ? Math.min(100, actualSecs / goalSecs * 100) : 0;
+    const met        = !isRest && actualSecs >= goalSecs;
+
+    totalActual += actualSecs;
+    totalGoal   += goalSecs;
+
+    const barColor = met
+      ? 'var(--green)'
+      : 'linear-gradient(90deg, var(--accent), var(--accent2))';
+
+    let rightHtml;
+    if (isRest) {
+      rightHtml = `<span style="color:var(--text2)">rest day</span>`;
+    } else if (isFuture) {
+      rightHtml = `<span style="color:var(--text2)">— / ${fmtH(goalSecs)}</span>`;
+    } else {
+      const check = met ? ' <span style="color:var(--green)">✓</span>' : '';
+      const col   = met ? 'var(--green)' : 'var(--text)';
+      rightHtml   = `<span style="color:${col}">${fmtHm(actualSecs)}</span>`
+                  + `<span style="color:var(--text2)"> / ${fmtH(goalSecs)}</span>${check}`;
+    }
+
+    html += `
+      <div class="week-row${isToday ? ' is-today' : ''}">
+        <div class="week-day-label${isToday ? ' active' : ''}">${label}</div>
+        <div class="week-bar-track">
+          ${isRest
+            ? `<div class="week-bar-rest"></div>`
+            : `<div class="week-bar-fill" style="width:${isFuture ? 0 : pct.toFixed(1)}%;background:${barColor}"></div>`
+          }
+        </div>
+        <div class="week-right">${rightHtml}</div>
+      </div>`;
+  }
+
+  // Weekly total row
+  const wPct = totalGoal > 0 ? Math.round(totalActual / totalGoal * 100) : null;
+  html += `
+    <div class="week-total-row">
+      <span class="week-total-label">Week Total</span>
+      <span>
+        <span style="color:var(--accent-lt);font-weight:700">${fmtHm(totalActual)}</span>
+        ${totalGoal > 0
+          ? `<span style="color:var(--text2)"> / ${fmtHm(totalGoal)}</span>
+             <span style="color:var(--text2);font-size:11px;margin-left:5px">${wPct}%</span>`
+          : ''}
+      </span>
+    </div>`;
+
+  container.innerHTML = html;
+}
+
+function renderLog(sessions) {
+  const showAll = el('log-user-select')?.value === 'all';
+  let rows = sessions ?? [];
+
+  if (showAll) {
+    // Merge both users (re-read synchronously from LS for simplicity)
+    const today = dateKey(new Date());
+    rows = lsGet(LS_SESSIONS, []).filter(s => s.date === today);
+  }
+
+  rows = [...rows].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+  const log = el('session-log');
+  if (!rows.length) {
+    log.innerHTML = '<div class="empty-state">No sessions recorded today.</div>';
+    return;
+  }
+
+  log.innerHTML = rows.map(s => {
+    const t0 = new Date(s.startTime);
+    const t1 = new Date(s.endTime);
+    const tag = s.manual ? '<span class="session-manual">manual</span>' : '';
+    const who = showAll
+      ? `<span style="color:var(--accent-lt);font-size:11px;margin-right:4px">
+           ${settings.names[s.userId] || s.userId}
+         </span>` : '';
+    return `
+      <div class="session-row">
+        <div>
+          ${who}
+          <div class="session-time">${fmt12(t0)} – ${fmt12(t1)}${tag}</div>
+          ${s.note ? `<div class="session-note">${esc(s.note)}</div>` : ''}
+        </div>
+        <div class="session-dur">${fmtHm(s.durationSeconds)}</div>
+      </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🪟  POP-OUT MINI WINDOW
+   ───────────────────────────────────────────────────────────────── */
+function openPopout() {
+  const url  = location.href.split('?')[0] + '?mini=1';
+  const w    = 260, h = 130;
+  const left = Math.max(0, screen.availWidth  - w - 24);
+  const top  = Math.max(0, screen.availHeight - h - 60);
+  window.open(url, 'ww_mini',
+    `width=${w},height=${h},left=${left},top=${top},` +
+    `resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+  );
+}
+
+function openFull() {
+  window.open(location.href.split('?')[0], 'ww_main');
+}
+
+function miniToggle() {
+  state.running ? doStop(true) : doStart();
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🎨  UI
+   ───────────────────────────────────────────────────────────────── */
+function updateUI() {
+  if (isMini) {
+    const btn = el('mini-start-btn');
+    btn.textContent = state.running ? '■ Stop' : '▶ Start';
+    btn.className   = `btn ${state.running ? 'btn-danger' : 'btn-primary'} btn-sm`;
+    el('mini-name').textContent = settings.names[state.userId] || state.userId;
+    el('mini-clock').classList.toggle('running', state.running);
+    return;
+  }
+
+  const btn = el('start-btn');
+  btn.textContent = state.running ? '⏹ Stop' : '▶ Start';
+  btn.className   = `btn ${state.running ? 'btn-danger' : 'btn-primary'}`;
+
+  const status = el('timer-status');
+  if (state.running) {
+    status.innerHTML = `<span class="pulse-dot"></span>Running — ${settings.names[state.userId]}`;
+  } else {
+    status.textContent = 'Ready to work';
+  }
+
+  el('timer-clock').classList.toggle('running', state.running);
+  if (!state.running) el('timer-clock').textContent = '00:00:00';
+}
+
+function updateUserTabs() {
+  el('tab-porter').classList.toggle('active',  state.userId === 'porter');
+  el('tab-bethany').classList.toggle('active', state.userId === 'bethany');
+}
+
+function switchUser(userId) {
+  if (state.running) {
+    if (!confirm(`Switching users will stop the current timer. Continue?`)) return;
+    doStop(true);
+  }
+  state.userId = userId;
+  lsSet(LS_STATE, state);
+  updateUserTabs();
+  renderStats();
+  broadcast({ type: 'user-switched', userId });
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🗓  DATE HELPERS
+   ───────────────────────────────────────────────────────────────── */
+function dateKey(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function weekKey(d) {
+  // ISO week
+  const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dow  = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dow);
+  const yr   = tmp.getUTCFullYear();
+  const wk   = Math.ceil(((tmp - new Date(Date.UTC(yr,0,1))) / 86400000 + 1) / 7);
+  return `${yr}-W${pad(wk)}`;
+}
+
+function monthKey(d) {
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+}
+
+function fmt12(d) {
+  let h = d.getHours(), m = d.getMinutes(), ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${pad(m)} ${ap}`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🔧  HELPERS
+   ───────────────────────────────────────────────────────────────── */
+function el(id) { return document.getElementById(id); }
+
+function openOverlay(id)  { el(id)?.classList.add('open'); }
+function closeOverlay(id) { el(id)?.classList.remove('open'); }
+
+// Close overlay on backdrop click
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => {
+    if (e.target === ov) closeOverlay(ov.id);
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────────
+   🚀  INIT
+   ───────────────────────────────────────────────────────────────── */
+function init() {
+  initFirebase();
+  loadSettings();
+  loadTimerState();
+
+  if (!fbReady) el('firebase-banner')?.classList.add('visible');
+
+  if (isMini) {
+    document.body.classList.add('mini-mode');
+    document.title = 'WorkWatch ⏱';
+    updateUI();
+    tick();
+    if (state.running) startLoop();
+
+  } else {
+    updateUserTabs();
+    updateUI();
+    tick();
+
+    if (state.running) {
+      startLoop();
+      // Resume hourly check — figure out remaining time
+      const elapsedSecs  = elapsed();
+      const intervalSecs = settings.checkIntervalMin * 60;
+      const remainMs     = (intervalSecs - (elapsedSecs % intervalSecs)) * 1000;
+      scheduleHourlyCheck(remainMs);
+    }
+
+    renderStats();
+
+    // Request notification permission once, 3 seconds after load
+    // (browser remembers the answer permanently — it won't ask again after granted/denied)
+    setTimeout(requestNotifPermission, 3000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
