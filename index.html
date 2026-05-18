@@ -589,6 +589,34 @@
       0%, 100% { opacity: 1; }
       50%       { opacity: .3; }
     }
+
+    /* ─── Quick ±min buttons ─── */
+    .quick-btns {
+      display: none;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .quick-btns.visible { display: flex; }
+
+    /* ─── Session edit button ─── */
+    .session-edit-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text2);
+      font-size: 11px;
+      padding: 3px 7px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+    .session-edit-btn:hover { color: var(--text); border-color: var(--text2); }
+
+    /* ─── Paused clock (AFK check in progress) ─── */
+    .timer-clock.paused { color: var(--orange) !important; }
+    .mini-clock.paused  { color: var(--orange) !important; }
   </style>
 </head>
 <body>
@@ -604,7 +632,7 @@
     <button class="btn btn-ghost btn-xs" onclick="openFull()" title="Open full window">↑ Full</button>
   </div>
   <div id="mini-check-bar" onclick="respondStillWorking(true)">
-    Still working? Tap YES — auto-stop in <span id="mini-cd">120</span>s
+    ⏸ Timer paused. Still working? Tap YES to resume.
   </div>
 </div>
 
@@ -621,6 +649,7 @@
         <button class="user-tab active" id="tab-porter"   onclick="switchUser('porter')">Porter</button>
         <button class="user-tab"        id="tab-bethany"  onclick="switchUser('bethany')">Bethany</button>
       </div>
+      <button class="icon-btn" id="notif-btn" onclick="requestNotifPermission()" title="Enable notifications for 'Still working?' alerts" style="display:none">🔔</button>
       <button class="icon-btn" onclick="openSettings()" title="Settings">⚙</button>
     </div>
   </div>
@@ -640,6 +669,13 @@
       <button class="btn btn-primary" id="start-btn" onclick="toggleTimer()">▶ Start</button>
       <button class="btn btn-ghost"   onclick="openPopout()"    title="Open mini timer in a small window">↗ Pop Out</button>
       <button class="btn btn-ghost"   onclick="openManualAdd()" title="Log time you forgot to track">+ Add Time</button>
+    </div>
+    <!-- Quick-adjust buttons — visible only while timer is running -->
+    <div class="quick-btns" id="quick-btns">
+      <button class="btn btn-ghost btn-sm" onclick="adjustTimer(-10)" title="Subtract 10 minutes from session">−10m</button>
+      <button class="btn btn-ghost btn-sm" onclick="adjustTimer(-5)"  title="Subtract 5 minutes from session">−5m</button>
+      <button class="btn btn-ghost btn-sm" onclick="adjustTimer(5)"   title="Add 5 minutes to session">+5m</button>
+      <button class="btn btn-ghost btn-sm" onclick="adjustTimer(10)"  title="Add 10 minutes to session">+10m</button>
     </div>
   </div>
 
@@ -701,11 +737,9 @@
     <div class="emoji">⏰</div>
     <h2>Still working?</h2>
     <p class="sub">
-      You've been working for an hour. The timer will stop automatically if you don't respond.
+      Your timer is <strong style="color:var(--orange)">paused</strong>. If you've been working this whole time, click <em>Still Working</em> and the clock will jump to the actual elapsed time. If you stepped away, click <em>Stop Timer</em> to save only up to this point.
     </p>
-    <div class="countdown-circle" id="countdown-num">120</div>
-    <div class="countdown-label">seconds until auto-stop</div>
-    <div style="display:flex; gap:12px; justify-content:center;">
+    <div style="display:flex; gap:12px; justify-content:center; margin-bottom:4px;">
       <button class="btn btn-danger"   onclick="respondStillWorking(false)">⏹ Stop Timer</button>
       <button class="btn btn-primary"  onclick="respondStillWorking(true)">✓ Still Working</button>
     </div>
@@ -819,6 +853,43 @@
 <!-- ═══════════════════════════════════════════════════════════════
      JAVASCRIPT
 ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     EDIT SESSION MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="edit-session-modal">
+  <div class="modal">
+    <h2>Edit Session</h2>
+    <p class="sub">Adjust the times or remove this session entirely.</p>
+
+    <input type="hidden" id="edit-session-id">
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="edit-date">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Start Time</label>
+        <input type="time" id="edit-start">
+      </div>
+      <div class="field">
+        <label>End Time</label>
+        <input type="time" id="edit-end">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note <span style="font-weight:400">(optional)</span></label>
+      <input type="text" id="edit-note" placeholder="e.g. Client calls, deep work…">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-danger" style="margin-right:auto" onclick="deleteSessionById()">🗑 Delete</button>
+      <button class="btn btn-ghost"   onclick="closeOverlay('edit-session-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditSession()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -1000,12 +1071,13 @@ function onBroadcast({ data: msg }) {
 /* ─────────────────────────────────────────────────────────────────
    ⏱  STATE
    ───────────────────────────────────────────────────────────────── */
-let state = { userId: 'porter', running: false, startTime: null };
+let state = { userId: 'porter', running: false, startTime: null, pausedAt: null };
 
 function loadTimerState() {
   const s = lsGet(LS_STATE, {});
   state = { ...state, ...s };
   if (state.running && !state.startTime) state.running = false; // sanity
+  state.pausedAt = null; // always clear AFK pause on reload — resume normally
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1013,14 +1085,16 @@ function loadTimerState() {
    ───────────────────────────────────────────────────────────────── */
 let displayLoop = null;
 let hourlyTimeout = null;
-let stillCdInterval = null;
 
 const isMini = new URLSearchParams(location.search).get('mini') === '1';
 const WINDOW_ID = Math.random().toString(36).slice(2);
 
 function elapsed() {
-  if (!state.running || !state.startTime) return 0;
-  return Math.floor((Date.now() - new Date(state.startTime).getTime()) / 1000);
+  if (!state.startTime) return 0;
+  if (!state.running && !state.pausedAt) return 0;
+  // When paused (AFK check): freeze at the moment the modal triggered
+  const endpoint = state.pausedAt ? new Date(state.pausedAt).getTime() : Date.now();
+  return Math.floor((endpoint - new Date(state.startTime).getTime()) / 1000);
 }
 
 function fmtSecs(s) {
@@ -1050,14 +1124,16 @@ function doStart() {
   broadcast({ type: 'timer-started', startTime: state.startTime, userId: state.userId });
 }
 
-function doStop(save = true) {
+function doStop(save = true, usePauseAsEnd = false) {
   if (!state.running) return;
-  const t0 = new Date(state.startTime);
-  const t1 = new Date();
+  const t0     = new Date(state.startTime);
+  // usePauseAsEnd: when stopping from AFK expiry, end at the pause point not now
+  const t1     = (usePauseAsEnd && state.pausedAt) ? new Date(state.pausedAt) : new Date();
+  const userId = state.userId; // capture before _stopDisplay clears state
   _stopDisplay();
 
   if (save) {
-    const session = buildSession(state.userId, t0, t1, '', false);
+    const session = buildSession(userId, t0, t1, '', false);
     saveSession(session);
     broadcast({ type: 'timer-stopped' });
     renderStats();
@@ -1066,9 +1142,22 @@ function doStop(save = true) {
   updateUI();
 }
 
+function adjustTimer(minutes) {
+  if (!state.running || !state.startTime) return;
+  const adj        = minutes * 60 * 1000;
+  const newStartMs = new Date(state.startTime).getTime() - adj;
+  // Don't let elapsed drop to 0 or go negative
+  const ceiling    = state.pausedAt ? new Date(state.pausedAt).getTime() : Date.now();
+  if (newStartMs >= ceiling) return;
+  state.startTime  = new Date(newStartMs).toISOString();
+  lsSet(LS_STATE, state);
+  tick(); // update display immediately
+}
+
 function _stopDisplay() {
   state.running   = false;
   state.startTime = null;
+  state.pausedAt  = null;
   lsSet(LS_STATE, state);
   clearDisplayLoop();
   clearHourlyCheck();
@@ -1098,10 +1187,8 @@ function tick() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   ⏰  HOURLY "STILL WORKING?" CHECK
+   ⏰  PERIODIC "STILL WORKING?" CHECK
    ───────────────────────────────────────────────────────────────── */
-let stillCd = 120;
-
 function scheduleHourlyCheck(delayMs) {
   clearHourlyCheck();
   hourlyTimeout = setTimeout(() => {
@@ -1112,35 +1199,28 @@ function scheduleHourlyCheck(delayMs) {
 
 function clearHourlyCheck() {
   clearTimeout(hourlyTimeout);
-  clearInterval(stillCdInterval);
   hourlyTimeout = null;
 }
 
 function showStillWorkingModal() {
-  stillCd = 120;
+  // Pause the clock: freeze display at this exact moment
+  if (state.running && !state.pausedAt) {
+    state.pausedAt = new Date().toISOString();
+    lsSet(LS_STATE, state);
+    clearDisplayLoop(); // stop the counter visually
+    el('timer-clock')?.classList.add('paused');
+    el('mini-clock')?.classList.add('paused');
+  }
 
   if (isMini) {
     el('mini-check-bar').classList.add('visible');
-    el('mini-cd').textContent = stillCd;
   } else {
-    el('countdown-num').textContent = stillCd;
     openOverlay('still-working-modal');
   }
 
-  sendNotification('Still working?',
-    `Your timer has been running for ${settings.checkIntervalMin} min. Click to respond.`);
-
-  clearInterval(stillCdInterval);
-  stillCdInterval = setInterval(() => {
-    stillCd--;
-    if (isMini) el('mini-cd').textContent = stillCd;
-    else        el('countdown-num').textContent = stillCd;
-
-    if (stillCd <= 0) {
-      clearInterval(stillCdInterval);
-      _handleStillInternal(false, true);
-    }
-  }, 1000);
+  // No countdown — modal stays open indefinitely until the user responds
+  sendNotification('⏸ Timer paused — still working?',
+    `Your timer paused after ${settings.checkIntervalMin} min. Open WorkWatch to respond.`);
 }
 
 function respondStillWorking(continuing) {
@@ -1148,26 +1228,42 @@ function respondStillWorking(continuing) {
 }
 
 function _handleStillInternal(continuing, shouldBroadcast) {
-  clearInterval(stillCdInterval);
   closeOverlay('still-working-modal');
   el('mini-check-bar')?.classList.remove('visible');
+  el('timer-clock')?.classList.remove('paused');
+  el('mini-clock')?.classList.remove('paused');
 
   if (shouldBroadcast) broadcast({ type: 'still-response', continuing });
 
   if (continuing) {
+    // User was still working — clear the pause so elapsed() jumps to real time
+    // e.g. started 8:00, paused at 8:30, confirmed at 9:15 → clock shows 1h15m
+    state.pausedAt = null;
+    lsSet(LS_STATE, state);
+    startLoop(); // restart ticking from state.startTime (never changed)
     scheduleHourlyCheck(settings.checkIntervalMin * 60 * 1000);
   } else {
-    doStop(true);
+    // User stepped away — save only up to the moment the modal triggered
+    doStop(true, true); // usePauseAsEnd = true
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────
    🔔  BROWSER NOTIFICATIONS
+   Browser stores the granted/denied answer permanently per origin.
+   We never ask automatically — only when the user clicks the 🔔 button.
    ───────────────────────────────────────────────────────────────── */
 function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') { updateNotifBtn(); return; }
+  Notification.requestPermission().then(() => updateNotifBtn());
+}
+
+function updateNotifBtn() {
+  const btn = el('notif-btn');
+  if (!btn || !('Notification' in window)) return;
+  // Show the bell only when permission hasn't been granted yet
+  btn.style.display = Notification.permission === 'granted' ? 'none' : '';
 }
 
 function sendNotification(title, body) {
@@ -1215,20 +1311,21 @@ function saveSession(session) {
 }
 
 async function fetchSessions(userId, field, value) {
-  // Prefer Firebase when ready
+  // Use a single-field Firestore query (avoids composite index requirement)
+  // and filter by userId in JS — perfectly fine for a small 2-person app.
   if (fbReady) {
     try {
       const snap = await db.collection('sessions')
-        .where('userId', '==', userId)
         .where(field, '==', value)
         .get();
-      return snap.docs.map(d => {
-        const data = d.data();
-        // Convert Timestamps → ISO strings for uniform handling
-        if (data.startTime?.toDate) data.startTime = data.startTime.toDate().toISOString();
-        if (data.endTime?.toDate)   data.endTime   = data.endTime.toDate().toISOString();
-        return data;
-      });
+      return snap.docs
+        .map(d => {
+          const data = d.data();
+          if (data.startTime?.toDate) data.startTime = data.startTime.toDate().toISOString();
+          if (data.endTime?.toDate)   data.endTime   = data.endTime.toDate().toISOString();
+          return data;
+        })
+        .filter(d => d.userId === userId);
     } catch (e) {
       console.warn('Firebase read failed, using local:', e.message);
     }
@@ -1273,6 +1370,87 @@ async function saveManualEntry() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
+   ✏️  EDIT / DELETE SESSION
+   ───────────────────────────────────────────────────────────────── */
+let editingSessionId = null;
+
+function openEditSession(sessionId) {
+  const sessions = lsGet(LS_SESSIONS, []);
+  const session  = sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  editingSessionId = sessionId;
+  const t0 = new Date(session.startTime);
+  const t1 = new Date(session.endTime);
+  el('edit-session-id').value = sessionId;
+  el('edit-date').value       = dateKey(t0);
+  el('edit-start').value      = `${pad(t0.getHours())}:${pad(t0.getMinutes())}`;
+  el('edit-end').value        = `${pad(t1.getHours())}:${pad(t1.getMinutes())}`;
+  el('edit-note').value       = session.note || '';
+  openOverlay('edit-session-modal');
+}
+
+async function saveEditSession() {
+  if (!editingSessionId) return;
+  const dateStr  = el('edit-date').value;
+  const startStr = el('edit-start').value;
+  const endStr   = el('edit-end').value;
+  const note     = el('edit-note').value.trim();
+  if (!dateStr || !startStr || !endStr) { alert('Please fill in all time fields.'); return; }
+  const t0 = new Date(`${dateStr}T${startStr}`);
+  const t1 = new Date(`${dateStr}T${endStr}`);
+  if (t1 <= t0) { alert('End time must be after start time.'); return; }
+
+  const sessions = lsGet(LS_SESSIONS, []);
+  const idx = sessions.findIndex(s => s.id === editingSessionId);
+  if (idx === -1) return;
+
+  const updated = {
+    ...sessions[idx],
+    date:            dateKey(t0),
+    week:            weekKey(t0),
+    month:           monthKey(t0),
+    startTime:       t0.toISOString(),
+    endTime:         t1.toISOString(),
+    durationSeconds: Math.floor((t1 - t0) / 1000),
+    note
+  };
+  sessions[idx] = updated;
+  lsSet(LS_SESSIONS, sessions);
+
+  if (fbReady) {
+    db.collection('sessions').doc(editingSessionId).update({
+      date: updated.date, week: updated.week, month: updated.month,
+      startTime: firebase.firestore.Timestamp.fromDate(t0),
+      endTime:   firebase.firestore.Timestamp.fromDate(t1),
+      durationSeconds: updated.durationSeconds,
+      note
+    }).catch(console.warn);
+  }
+
+  closeOverlay('edit-session-modal');
+  editingSessionId = null;
+  await renderStats();
+  broadcast({ type: 'stats-changed' });
+}
+
+async function deleteSessionById() {
+  if (!editingSessionId) return;
+  if (!confirm('Delete this session? This cannot be undone.')) return;
+
+  const sessions = lsGet(LS_SESSIONS, []);
+  lsSet(LS_SESSIONS, sessions.filter(s => s.id !== editingSessionId));
+
+  if (fbReady) {
+    db.collection('sessions').doc(editingSessionId).delete().catch(console.warn);
+  }
+
+  closeOverlay('edit-session-modal');
+  editingSessionId = null;
+  await renderStats();
+  broadcast({ type: 'stats-changed' });
+}
+
+/* ─────────────────────────────────────────────────────────────────
    📊  SCHEDULE HELPERS
    ───────────────────────────────────────────────────────────────── */
 function getDayGoalSecs(userId, date) {
@@ -1293,16 +1471,19 @@ function fmtH(secs) {
    📊  STATS & LOG
    ───────────────────────────────────────────────────────────────── */
 async function renderStats() {
-  const uid   = state.userId;
-  const now   = new Date();
-  const today = dateKey(now);
-  const wk    = weekKey(now);
-  const mo    = monthKey(now);
+  const uid      = state.userId;
+  const otherUid = uid === 'porter' ? 'bethany' : 'porter';
+  const now      = new Date();
+  const today    = dateKey(now);
+  const wk       = weekKey(now);
+  const mo       = monthKey(now);
 
-  const [dayS, wkS, moS] = await Promise.all([
-    fetchSessions(uid, 'date', today),
-    fetchSessions(uid, 'week', wk),
-    fetchSessions(uid, 'month', mo)
+  // Fetch current user's stats + the other user's today sessions (for "Both users" log view)
+  const [dayS, wkS, moS, otherDayS] = await Promise.all([
+    fetchSessions(uid,      'date',  today),
+    fetchSessions(uid,      'week',  wk),
+    fetchSessions(uid,      'month', mo),
+    fetchSessions(otherUid, 'date',  today)
   ]);
 
   const cur = state.running ? elapsed() : 0;
@@ -1335,7 +1516,7 @@ async function renderStats() {
   const wgl = el('week-glance-user');
   if (wgl) wgl.textContent = settings.names[uid] || uid;
 
-  renderLog(dayS);
+  renderLog(dayS, otherDayS);
   renderWeeklyView(wkS);
 }
 
@@ -1430,15 +1611,10 @@ function renderWeeklyView(weekSessions) {
   container.innerHTML = html;
 }
 
-function renderLog(sessions) {
+function renderLog(sessions, otherSessions = []) {
   const showAll = el('log-user-select')?.value === 'all';
-  let rows = sessions ?? [];
-
-  if (showAll) {
-    // Merge both users (re-read synchronously from LS for simplicity)
-    const today = dateKey(new Date());
-    rows = lsGet(LS_SESSIONS, []).filter(s => s.date === today);
-  }
+  // In "Both users" mode, merge the pre-fetched sessions from both users
+  let rows = showAll ? [...(sessions ?? []), ...(otherSessions ?? [])] : (sessions ?? []);
 
   rows = [...rows].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
@@ -1463,7 +1639,10 @@ function renderLog(sessions) {
           <div class="session-time">${fmt12(t0)} – ${fmt12(t1)}${tag}</div>
           ${s.note ? `<div class="session-note">${esc(s.note)}</div>` : ''}
         </div>
-        <div class="session-dur">${fmtHm(s.durationSeconds)}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <div class="session-dur">${fmtHm(s.durationSeconds)}</div>
+          <button class="session-edit-btn" onclick="openEditSession('${esc(s.id)}')" title="Edit or delete">✏</button>
+        </div>
       </div>`;
   }).join('');
 }
@@ -1516,6 +1695,9 @@ function updateUI() {
 
   el('timer-clock').classList.toggle('running', state.running);
   if (!state.running) el('timer-clock').textContent = '00:00:00';
+
+  // Show quick ±min buttons only while the timer is actively running
+  el('quick-btns')?.classList.toggle('visible', state.running);
 }
 
 function updateUserTabs() {
@@ -1613,10 +1795,7 @@ function init() {
     }
 
     renderStats();
-
-    // Request notification permission once, 3 seconds after load
-    // (browser remembers the answer permanently — it won't ask again after granted/denied)
-    setTimeout(requestNotifPermission, 3000);
+    updateNotifBtn(); // Show 🔔 button if notifications haven't been enabled yet
   }
 }
 
