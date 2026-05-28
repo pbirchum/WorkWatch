@@ -617,6 +617,200 @@
     /* ─── Paused clock (AFK check in progress) ─── */
     .timer-clock.paused { color: var(--orange) !important; }
     .mini-clock.paused  { color: var(--orange) !important; }
+
+    /* ─── Week nav buttons ─── */
+    .week-nav-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text2);
+      font-size: 13px;
+      padding: 2px 8px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+      line-height: 1.4;
+    }
+    .week-nav-btn:hover { color: var(--text); border-color: var(--text2); }
+    .week-nav-label {
+      font-size: 11px;
+      color: var(--text2);
+      margin: 0 4px;
+      white-space: nowrap;
+    }
+
+    /* ─── Surplus delta (per-day and week total) ─── */
+    .week-delta {
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+    .week-delta.pos { color: var(--green); }
+    .week-delta.neg { color: var(--red); }
+    .week-delta.zero { color: var(--text2); }
+
+    /* ─── Tag chips ─── */
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin: 1px 2px 1px 0;
+      white-space: nowrap;
+    }
+    .tag-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-top: 4px;
+    }
+
+    /* ─── Tag modal ─── */
+    .tag-select-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-height: 44px;
+      margin-bottom: 12px;
+    }
+    .tag-select-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: opacity .15s, border-color .15s;
+    }
+    .tag-select-chip.selected { border-color: #fff; }
+    .tag-select-chip:hover { opacity: .85; }
+
+    /* ─── Tag split rows ─── */
+    .tag-split-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .tag-split-row:last-child { border-bottom: none; }
+    .tag-split-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .tag-split-name { flex: 1; }
+    .tag-split-input {
+      width: 52px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 4px 6px;
+      font-family: inherit;
+      outline: none;
+    }
+    .tag-split-input:focus { border-color: var(--accent); }
+    .tag-split-label { font-size: 11px; color: var(--text2); width: 28px; }
+    .tag-unalloc {
+      font-size: 12px;
+      color: var(--text2);
+      text-align: right;
+      padding-top: 8px;
+    }
+    .tag-unalloc.over { color: var(--red); }
+
+    /* ─── Tag manager ─── */
+    .tag-mgr-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .tag-mgr-row:last-child { border-bottom: none; }
+    .tag-mgr-color {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .tag-mgr-name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 2px 4px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .tag-mgr-name-input:focus { border-bottom-color: var(--accent); }
+    .tag-mgr-del {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--red);
+      font-size: 11px;
+      padding: 2px 7px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .tag-mgr-del:hover { background: rgba(248,81,73,.1); }
+
+    /* ─── Tag usage chart ─── */
+    #tag-chart-section { margin-bottom: 16px; }
+    .tag-chart-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+    }
+    .tag-chart-label {
+      font-size: 12px;
+      width: 80px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tag-chart-track {
+      flex: 1;
+      height: 14px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .tag-chart-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .5s ease;
+    }
+    .tag-chart-val {
+      font-size: 11px;
+      color: var(--text2);
+      width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -705,9 +899,23 @@
   <div class="section">
     <div class="section-head">
       <span class="section-title">Week at a Glance</span>
-      <span id="week-glance-user" style="font-size:12px;color:var(--accent-lt)"></span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span id="week-glance-user" style="font-size:12px;color:var(--accent-lt);margin-right:6px"></span>
+        <button class="week-nav-btn" onclick="shiftWeek(-1)" title="Previous week">‹</button>
+        <span class="week-nav-label" id="week-nav-label"></span>
+        <button class="week-nav-btn" onclick="shiftWeek(1)" title="Next week" id="week-nav-next">›</button>
+      </div>
     </div>
     <div class="week-view-wrap" id="week-view"></div>
+  </div>
+
+  <!-- Tag usage chart -->
+  <div class="section" id="tag-chart-section" style="display:none">
+    <div class="section-head">
+      <span class="section-title">Time by Tag</span>
+      <span id="tag-chart-week-label" style="font-size:11px;color:var(--text2)"></span>
+    </div>
+    <div style="padding:12px 16px 10px" id="tag-chart-body"></div>
   </div>
 
   <!-- Session log -->
@@ -842,6 +1050,10 @@
       <div class="sched-total">Weekly target: <span id="sched-total-bethany">38h</span></div>
     </div>
 
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <button class="btn btn-ghost btn-sm" onclick="closeOverlay('settings-modal');openTagManager()" style="width:100%">🏷 Manage Tags</button>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost"   onclick="closeOverlay('settings-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveSettings()">Save</button>
@@ -882,10 +1094,58 @@
       <input type="text" id="edit-note" placeholder="e.g. Client calls, deep work…">
     </div>
 
+    <!-- Tag editing within edit modal -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.5px;margin-bottom:6px">TAGS</div>
+      <div class="tag-select-area" id="edit-tag-select-area" style="margin-bottom:6px"></div>
+      <button class="btn btn-ghost btn-xs" onclick="promptNewTagFromEdit()">＋ New Tag</button>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-danger" style="margin-right:auto" onclick="deleteSessionById()">🗑 Delete</button>
       <button class="btn btn-ghost"   onclick="closeOverlay('edit-session-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveEditSession()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAG SESSION MODAL  (appears after timer stops)
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="tag-session-modal">
+  <div class="modal" style="max-width:440px">
+    <h2>Tag This Session</h2>
+    <p class="sub" id="tag-session-info">Session recorded.</p>
+
+    <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.5px;margin-bottom:6px">SELECT TAGS</div>
+    <div class="tag-select-area" id="tag-select-area"></div>
+    <button class="btn btn-ghost btn-xs" onclick="promptNewTag()" style="margin-bottom:14px">＋ New Tag</button>
+
+    <!-- Time split section — only shown when ≥2 tags selected -->
+    <div id="tag-split-section" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.5px;margin-bottom:6px">SPLIT TIME <span style="font-weight:400;text-transform:none;letter-spacing:0" id="tag-split-total-label"></span></div>
+      <div id="tag-split-rows"></div>
+      <div class="tag-unalloc" id="tag-unalloc"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="skipTagSession()">Skip</button>
+      <button class="btn btn-primary" onclick="saveTagSession()">Save Tags</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAG MANAGER MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="tag-manager-modal">
+  <div class="modal" style="max-width:440px">
+    <h2>Manage Tags</h2>
+    <p class="sub">Create, rename, recolor, or delete tags. Changes apply immediately.</p>
+    <div id="tag-mgr-list"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addNewTag()" style="margin-top:10px;width:100%">＋ Add Tag</button>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeOverlay('tag-manager-modal');renderStats()">Done</button>
     </div>
   </div>
 </div>
@@ -936,6 +1196,8 @@ function initFirebase() {
 const LS_SESSIONS  = 'ww_sessions_v2';
 const LS_STATE     = 'ww_state_v2';
 const LS_SETTINGS  = 'ww_settings_v1';
+const LS_TAGS      = 'ww_tags_v1';
+const LS_SESS_TAGS = 'ww_session_tags_v1'; // { sessionId: [{tagId, minutes}] }
 
 function lsGet(key, fallback = null) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -1124,7 +1386,7 @@ function doStart() {
   broadcast({ type: 'timer-started', startTime: state.startTime, userId: state.userId });
 }
 
-function doStop(save = true, usePauseAsEnd = false) {
+function doStop(save = true, usePauseAsEnd = false, skipTagPrompt = false) {
   if (!state.running) return;
   const t0     = new Date(state.startTime);
   // usePauseAsEnd: when stopping from AFK expiry, end at the pause point not now
@@ -1138,6 +1400,10 @@ function doStop(save = true, usePauseAsEnd = false) {
     broadcast({ type: 'timer-stopped' });
     renderStats();
     broadcast({ type: 'stats-changed' });
+    // Prompt tag assignment (skip for mini window, very short sessions <30s, or when forced)
+    if (!skipTagPrompt && !isMini && session.durationSeconds >= 30) {
+      openTagModal(session.id);
+    }
   }
   updateUI();
 }
@@ -1374,6 +1640,9 @@ async function saveManualEntry() {
    ───────────────────────────────────────────────────────────────── */
 let editingSessionId = null;
 
+// Tags selected in the edit modal
+let editSelectedTagIds = new Set();
+
 function openEditSession(sessionId) {
   const sessions = lsGet(LS_SESSIONS, []);
   const session  = sessions.find(s => s.id === sessionId);
@@ -1386,7 +1655,43 @@ function openEditSession(sessionId) {
   el('edit-start').value      = `${pad(t0.getHours())}:${pad(t0.getMinutes())}`;
   el('edit-end').value        = `${pad(t1.getHours())}:${pad(t1.getMinutes())}`;
   el('edit-note').value       = session.note || '';
+  // Pre-populate tags
+  const existing = sessionTagMap[sessionId] || [];
+  editSelectedTagIds = new Set(existing.map(e => e.tagId));
+  renderEditTagChips();
   openOverlay('edit-session-modal');
+}
+
+function renderEditTagChips() {
+  const area = el('edit-tag-select-area');
+  if (!area) return;
+  area.innerHTML = tags.map(t => `
+    <span class="tag-select-chip${editSelectedTagIds.has(t.id) ? ' selected' : ''}"
+          style="background:${t.color};color:#fff"
+          onclick="toggleEditTag('${t.id}')">
+      ${esc(t.name)}
+    </span>`).join('');
+}
+
+function toggleEditTag(tagId) {
+  if (editSelectedTagIds.has(tagId)) {
+    editSelectedTagIds.delete(tagId);
+  } else {
+    editSelectedTagIds.add(tagId);
+  }
+  renderEditTagChips();
+}
+
+function promptNewTagFromEdit() {
+  const name = prompt('Tag name:');
+  if (!name || !name.trim()) return;
+  const colors = ['#7c3aed','#ec4899','#3fb950','#e3b341','#58a6ff','#f0883e','#39d353'];
+  const color = colors[tags.length % colors.length];
+  const id = `tag_${Date.now()}`;
+  tags.push({ id, name: name.trim(), color });
+  saveTags();
+  editSelectedTagIds.add(id);
+  renderEditTagChips();
 }
 
 async function saveEditSession() {
@@ -1427,8 +1732,22 @@ async function saveEditSession() {
     }).catch(console.warn);
   }
 
+  // Save tag selections (preserve existing minute allocations if tags unchanged)
+  const existingEntries = sessionTagMap[editingSessionId] || [];
+  const newEntries = [...editSelectedTagIds].map(tagId => {
+    const existing = existingEntries.find(e => e.tagId === tagId);
+    return { tagId, minutes: existing ? existing.minutes : 0 };
+  });
+  if (newEntries.length) {
+    sessionTagMap[editingSessionId] = newEntries;
+  } else {
+    delete sessionTagMap[editingSessionId];
+  }
+  saveSessionTagMap();
+
   closeOverlay('edit-session-modal');
   editingSessionId = null;
+  editSelectedTagIds = new Set();
   await renderStats();
   broadcast({ type: 'stats-changed' });
 }
@@ -1440,12 +1759,17 @@ async function deleteSessionById() {
   const sessions = lsGet(LS_SESSIONS, []);
   lsSet(LS_SESSIONS, sessions.filter(s => s.id !== editingSessionId));
 
+  // Clean up tag data
+  delete sessionTagMap[editingSessionId];
+  saveSessionTagMap();
+
   if (fbReady) {
     db.collection('sessions').doc(editingSessionId).delete().catch(console.warn);
   }
 
   closeOverlay('edit-session-modal');
   editingSessionId = null;
+  editSelectedTagIds = new Set();
   await renderStats();
   broadcast({ type: 'stats-changed' });
 }
@@ -1463,8 +1787,61 @@ function getWeeklyGoalSecs(userId) {
 }
 
 function fmtH(secs) {
-  const h = secs / 3600;
-  return `${h % 1 === 0 ? h : h.toFixed(1)}h`;
+  // Always "Xh Ym", "Xh", or "Ym"
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0)          return `${h}h`;
+  return `${m}m`;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   📅  WEEK NAVIGATION
+   ───────────────────────────────────────────────────────────────── */
+let viewWeekOffset = 0; // 0 = current week, -1 = last week, etc.
+
+function getWeekBounds(offset = 0) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const diff = (dow === 0) ? -6 : 1 - dow;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + diff + offset * 7);
+  mon.setHours(0, 0, 0, 0);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  sun.setHours(23, 59, 59, 999);
+  // weekKey for the Monday of that week
+  const wk = weekKey(mon);
+  return { mon, sun, wk };
+}
+
+function shiftWeek(delta) {
+  const newOffset = viewWeekOffset + delta;
+  if (newOffset > 0) return; // don't allow future weeks
+  viewWeekOffset = newOffset;
+  renderWeekNavLabel();
+  // Re-fetch week sessions for new offset and re-render
+  const uid = state.userId;
+  const { wk } = getWeekBounds(viewWeekOffset);
+  fetchSessions(uid, 'week', wk).then(wkS => {
+    renderWeeklyView(wkS);
+    renderTagChart(wkS);
+  });
+}
+
+function renderWeekNavLabel() {
+  const lbl = el('week-nav-label');
+  const nextBtn = el('week-nav-next');
+  if (!lbl) return;
+  if (viewWeekOffset === 0) {
+    lbl.textContent = 'This Week';
+    if (nextBtn) nextBtn.disabled = true;
+  } else {
+    const { mon, sun } = getWeekBounds(viewWeekOffset);
+    const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+    lbl.textContent = `${fmt(mon)} – ${fmt(sun)}`;
+    if (nextBtn) nextBtn.disabled = false;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1475,22 +1852,28 @@ async function renderStats() {
   const otherUid = uid === 'porter' ? 'bethany' : 'porter';
   const now      = new Date();
   const today    = dateKey(now);
-  const wk       = weekKey(now);
+  const currentWk = weekKey(now); // always current week for stat cards
+  const { wk: viewWk } = getWeekBounds(viewWeekOffset);
   const mo       = monthKey(now);
 
-  // Fetch current user's stats + the other user's today sessions (for "Both users" log view)
-  const [dayS, wkS, moS, otherDayS] = await Promise.all([
+  // Fetch current user's stats + other user's today sessions (for "Both users" log view)
+  const [dayS, currentWkS, moS, otherDayS] = await Promise.all([
     fetchSessions(uid,      'date',  today),
-    fetchSessions(uid,      'week',  wk),
+    fetchSessions(uid,      'week',  currentWk),
     fetchSessions(uid,      'month', mo),
     fetchSessions(otherUid, 'date',  today)
   ]);
 
+  // Fetch view week sessions (may differ from current week)
+  const viewWkS = viewWeekOffset === 0
+    ? currentWkS
+    : await fetchSessions(uid, 'week', viewWk);
+
   const cur = state.running ? elapsed() : 0;
 
   const daySecs  = dayS.reduce((a, s) => a + s.durationSeconds, 0) + cur;
-  const wkSecs   = wkS.reduce((a, s)  => a + s.durationSeconds, 0) + cur;
-  const moSecs   = moS.reduce((a, s)  => a + s.durationSeconds, 0) + cur;
+  const wkSecs   = currentWkS.reduce((a, s) => a + s.durationSeconds, 0) + cur;
+  const moSecs   = moS.reduce((a, s) => a + s.durationSeconds, 0) + cur;
 
   const dayGoal  = getDayGoalSecs(uid, now);
   const wkGoal   = getWeeklyGoalSecs(uid);
@@ -1501,23 +1884,39 @@ async function renderStats() {
   el('stat-week').textContent  = fmtHm(wkSecs);
   el('stat-month').textContent = fmtHm(moSecs);
 
-  // Goal sub-labels (show only when a goal is set)
+  // Goal sub-labels
   el('goal-today').textContent  = dayGoal > 0 ? `/ ${fmtH(dayGoal)} goal` : '';
   el('goal-week').textContent   = wkGoal  > 0 ? `/ ${fmtH(wkGoal)} goal`  : '';
   el('goal-month').textContent  = moGoal  > 0 ? `/ ${fmtH(moGoal)} goal`  : '';
 
   // Progress bars
-  const pct = (actual, goal) => goal > 0 ? `${Math.min(100, actual / goal * 100).toFixed(1)}%` : '0%';
+  const pct = (actual, goal) => goal > 0 ? `${Math.min(100, actual / goal * 100).toFixed(1)}%` : '100%';
   el('bar-today').style.width  = pct(daySecs, dayGoal);
   el('bar-week').style.width   = pct(wkSecs,  wkGoal);
   el('bar-month').style.width  = pct(moSecs,  moGoal);
 
-  // Update week label
+  // Override bar color to green when goal met or no goal
+  const setBarColor = (barId, actual, goal) => {
+    const fill = el(barId);
+    if (!fill) return;
+    if (goal === 0 || actual >= goal) {
+      fill.style.background = 'var(--green)';
+    } else {
+      fill.style.background = 'linear-gradient(90deg, var(--accent), var(--accent2))';
+    }
+  };
+  setBarColor('bar-today', daySecs, dayGoal);
+  setBarColor('bar-week',  wkSecs,  wkGoal);
+  setBarColor('bar-month', moSecs,  moGoal);
+
+  // Week glance user label
   const wgl = el('week-glance-user');
   if (wgl) wgl.textContent = settings.names[uid] || uid;
 
+  renderWeekNavLabel();
   renderLog(dayS, otherDayS);
-  renderWeeklyView(wkS);
+  renderWeeklyView(viewWkS);
+  renderTagChart(viewWkS);
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -1529,24 +1928,21 @@ function renderWeeklyView(weekSessions) {
 
   const uid    = state.userId;
   const today  = dateKey(new Date());
+  const { mon } = getWeekBounds(viewWeekOffset);
 
-  // Monday of current ISO week
-  const now   = new Date();
-  const dow   = now.getDay();                         // 0=Sun
-  const diff  = (dow === 0) ? -6 : 1 - dow;
-  const mon   = new Date(now);
-  mon.setDate(now.getDate() + diff);
-  mon.setHours(0, 0, 0, 0);
-
-  // Group completed sessions by date
+  // Group sessions by date
   const byDate = {};
   weekSessions.forEach(s => { byDate[s.date] = (byDate[s.date] || 0) + s.durationSeconds; });
-  if (state.running) byDate[today] = (byDate[today] || 0) + elapsed();
+  // Add live elapsed to today only when viewing current week
+  if (viewWeekOffset === 0 && state.running) {
+    byDate[today] = (byDate[today] || 0) + elapsed();
+  }
 
   const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
   let html = '';
   let totalActual = 0, totalGoal = 0;
+  let runningSurplus = 0; // cumulative surplus/deficit through today
 
   for (let i = 0; i < 7; i++) {
     const d      = new Date(mon);
@@ -1558,57 +1954,361 @@ function renderWeeklyView(weekSessions) {
     const actualSecs = byDate[dk] || 0;
     const isToday    = dk === today;
     const isFuture   = dk > today;
-    const isRest     = goalSecs === 0;
-    const pct        = goalSecs > 0 ? Math.min(100, actualSecs / goalSecs * 100) : 0;
-    const met        = !isRest && actualSecs >= goalSecs;
+    const isZeroGoal = goalSecs === 0;
 
     totalActual += actualSecs;
     totalGoal   += goalSecs;
 
-    const barColor = met
-      ? 'var(--green)'
-      : 'linear-gradient(90deg, var(--accent), var(--accent2))';
+    // Surplus delta — only for past days (and today) with a non-zero goal
+    let deltaHtml = '';
+    if (!isFuture && !isZeroGoal) {
+      const delta = actualSecs - goalSecs;
+      runningSurplus += delta;
+      const sign = delta >= 0 ? '+' : '';
+      const cls  = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'zero';
+      deltaHtml = `<span class="week-delta ${cls}">${sign}${fmtH(Math.abs(delta))}${delta < 0 ? ' behind' : ''}</span>`;
+    } else if (!isFuture && isZeroGoal && actualSecs > 0) {
+      // Bonus work on a zero-goal day
+      runningSurplus += actualSecs;
+      deltaHtml = `<span class="week-delta pos">+${fmtH(actualSecs)}</span>`;
+    }
 
+    // Bar logic
+    let barHtml;
+    if (isZeroGoal) {
+      if (actualSecs > 0 && !isFuture) {
+        // Show a bonus bar (capped at 100% of some reference — use 8h)
+        const bonusPct = Math.min(100, actualSecs / (8 * 3600) * 100);
+        barHtml = `<div class="week-bar-fill" style="width:${bonusPct.toFixed(1)}%;background:var(--green)"></div>`;
+      } else {
+        barHtml = `<div class="week-bar-rest"></div>`;
+      }
+    } else {
+      const pct      = Math.min(100, actualSecs / goalSecs * 100);
+      const met      = actualSecs >= goalSecs;
+      const barColor = met ? 'var(--green)' : 'linear-gradient(90deg, var(--accent), var(--accent2))';
+      barHtml = `<div class="week-bar-fill" style="width:${isFuture ? 0 : pct.toFixed(1)}%;background:${barColor}"></div>`;
+    }
+
+    // Right-side text
     let rightHtml;
-    if (isRest) {
+    if (isZeroGoal && (isFuture || actualSecs === 0)) {
       rightHtml = `<span style="color:var(--text2)">rest day</span>`;
+    } else if (isZeroGoal && actualSecs > 0) {
+      rightHtml = `<span style="color:var(--green)">${fmtHm(actualSecs)}</span>
+                   <span style="color:var(--text2);font-size:10px;margin-left:3px">bonus</span>`;
     } else if (isFuture) {
       rightHtml = `<span style="color:var(--text2)">— / ${fmtH(goalSecs)}</span>`;
     } else {
+      const met   = actualSecs >= goalSecs;
       const check = met ? ' <span style="color:var(--green)">✓</span>' : '';
       const col   = met ? 'var(--green)' : 'var(--text)';
       rightHtml   = `<span style="color:${col}">${fmtHm(actualSecs)}</span>`
-                  + `<span style="color:var(--text2)"> / ${fmtH(goalSecs)}</span>${check}`;
+                  + `<span style="color:var(--text2)"> / ${fmtH(goalSecs)}</span>${check}${deltaHtml}`;
     }
 
     html += `
       <div class="week-row${isToday ? ' is-today' : ''}">
         <div class="week-day-label${isToday ? ' active' : ''}">${label}</div>
-        <div class="week-bar-track">
-          ${isRest
-            ? `<div class="week-bar-rest"></div>`
-            : `<div class="week-bar-fill" style="width:${isFuture ? 0 : pct.toFixed(1)}%;background:${barColor}"></div>`
-          }
-        </div>
+        <div class="week-bar-track">${barHtml}</div>
         <div class="week-right">${rightHtml}</div>
       </div>`;
   }
 
-  // Weekly total row
+  // Weekly total row with running surplus
   const wPct = totalGoal > 0 ? Math.round(totalActual / totalGoal * 100) : null;
+  const surplusSign = runningSurplus >= 0 ? '+' : '';
+  const surplusCls  = runningSurplus > 0 ? 'pos' : runningSurplus < 0 ? 'neg' : 'zero';
+  const surplusHtml = `<span class="week-delta ${surplusCls}" style="font-size:11px">
+    ${surplusSign}${fmtH(Math.abs(runningSurplus))} ${runningSurplus >= 0 ? 'banked' : 'behind'}
+  </span>`;
+
   html += `
     <div class="week-total-row">
       <span class="week-total-label">Week Total</span>
-      <span>
+      <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
         <span style="color:var(--accent-lt);font-weight:700">${fmtHm(totalActual)}</span>
         ${totalGoal > 0
-          ? `<span style="color:var(--text2)"> / ${fmtHm(totalGoal)}</span>
-             <span style="color:var(--text2);font-size:11px;margin-left:5px">${wPct}%</span>`
+          ? `<span style="color:var(--text2)">/ ${fmtHm(totalGoal)}</span>
+             <span style="color:var(--text2);font-size:11px">${wPct}%</span>`
           : ''}
+        ${surplusHtml}
       </span>
     </div>`;
 
   container.innerHTML = html;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🏷️  TAG SYSTEM
+   ───────────────────────────────────────────────────────────────── */
+const DEFAULT_TAGS = [
+  { id: 'tag_deep',    name: 'Deep Work',   color: '#7c3aed' },
+  { id: 'tag_meeting', name: 'Meetings',    color: '#ec4899' },
+  { id: 'tag_admin',   name: 'Admin',       color: '#e3b341' },
+  { id: 'tag_email',   name: 'Email',       color: '#3fb950' },
+];
+
+let tags = [];
+let sessionTagMap = {}; // { sessionId: [{tagId, minutes}] }
+
+function loadTags() {
+  const saved = lsGet(LS_TAGS, null);
+  tags = saved ?? JSON.parse(JSON.stringify(DEFAULT_TAGS));
+  sessionTagMap = lsGet(LS_SESS_TAGS, {});
+}
+
+function saveTags() {
+  lsSet(LS_TAGS, tags);
+}
+
+function saveSessionTagMap() {
+  lsSet(LS_SESS_TAGS, sessionTagMap);
+}
+
+function getTagById(id) {
+  return tags.find(t => t.id === id) || null;
+}
+
+function tagChipHtml(tagId, minutes) {
+  const tag = getTagById(tagId);
+  if (!tag) return '';
+  const minLabel = minutes ? ` · ${fmtHm(minutes * 60)}` : '';
+  return `<span class="tag-chip" style="background:${tag.color}22;color:${tag.color};border:1px solid ${tag.color}55">${esc(tag.name)}${minLabel}</span>`;
+}
+
+// ── Tag session modal ──────────────────────────────────────────
+let pendingTagSessionId = null;
+let selectedTagIds = new Set();
+
+function openTagModal(sessionId) {
+  const sessions = lsGet(LS_SESSIONS, []);
+  const session  = sessions.find(s => s.id === sessionId);
+  if (!session) return;
+  pendingTagSessionId = sessionId;
+  selectedTagIds = new Set();
+
+  const totalMins = Math.round(session.durationSeconds / 60);
+  const t0 = new Date(session.startTime);
+  const t1 = new Date(session.endTime);
+  el('tag-session-info').textContent =
+    `${fmt12(t0)} – ${fmt12(t1)} · ${fmtHm(session.durationSeconds)}`;
+  el('tag-split-total-label').textContent = `(total: ${totalMins}m)`;
+
+  renderTagSelectChips();
+  el('tag-split-section').style.display = 'none';
+  el('tag-split-rows').innerHTML = '';
+  el('tag-unalloc').textContent = '';
+  openOverlay('tag-session-modal');
+}
+
+function renderTagSelectChips() {
+  const area = el('tag-select-area');
+  area.innerHTML = tags.map(t => `
+    <span class="tag-select-chip${selectedTagIds.has(t.id) ? ' selected' : ''}"
+          style="background:${t.color};color:#fff"
+          onclick="toggleTagSelection('${t.id}')">
+      ${esc(t.name)}
+    </span>`).join('');
+}
+
+function toggleTagSelection(tagId) {
+  if (selectedTagIds.has(tagId)) {
+    selectedTagIds.delete(tagId);
+  } else {
+    selectedTagIds.add(tagId);
+  }
+  renderTagSelectChips();
+  renderTagSplitSection();
+}
+
+function renderTagSplitSection() {
+  const section = el('tag-split-section');
+  const rows    = el('tag-split-rows');
+  const unalloc = el('tag-unalloc');
+  if (selectedTagIds.size < 2) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+
+  const sessions = lsGet(LS_SESSIONS, []);
+  const session  = sessions.find(s => s.id === pendingTagSessionId);
+  const totalMins = session ? Math.round(session.durationSeconds / 60) : 0;
+
+  rows.innerHTML = [...selectedTagIds].map(tagId => {
+    const tag = getTagById(tagId);
+    if (!tag) return '';
+    return `
+      <div class="tag-split-row">
+        <div class="tag-split-dot" style="background:${tag.color}"></div>
+        <div class="tag-split-name">${esc(tag.name)}</div>
+        <input class="tag-split-input" type="number" min="0" max="${totalMins}"
+               id="split-${tagId}" placeholder="min"
+               oninput="updateTagUnalloc(${totalMins})">
+        <div class="tag-split-label">min</div>
+      </div>`;
+  }).join('');
+
+  updateTagUnalloc(totalMins);
+}
+
+function updateTagUnalloc(totalMins) {
+  const unalloc = el('tag-unalloc');
+  let assigned = 0;
+  selectedTagIds.forEach(tagId => {
+    const inp = el(`split-${tagId}`);
+    if (inp) assigned += parseInt(inp.value || 0);
+  });
+  const rem = totalMins - assigned;
+  unalloc.textContent = rem >= 0
+    ? `${rem}m unallocated`
+    : `${Math.abs(rem)}m over — reduce to fit`;
+  unalloc.className = `tag-unalloc${rem < 0 ? ' over' : ''}`;
+}
+
+function saveTagSession() {
+  if (!pendingTagSessionId) return;
+  const tagArray = [...selectedTagIds].map(tagId => {
+    const inp = el(`split-${tagId}`);
+    const minutes = inp ? parseInt(inp.value || 0) : 0;
+    return { tagId, minutes };
+  });
+  sessionTagMap[pendingTagSessionId] = tagArray;
+  saveSessionTagMap();
+  closeOverlay('tag-session-modal');
+  pendingTagSessionId = null;
+  selectedTagIds = new Set();
+  renderStats();
+}
+
+function skipTagSession() {
+  closeOverlay('tag-session-modal');
+  pendingTagSessionId = null;
+  selectedTagIds = new Set();
+}
+
+function promptNewTag() {
+  const name = prompt('Tag name:');
+  if (!name || !name.trim()) return;
+  const colors = ['#7c3aed','#ec4899','#3fb950','#e3b341','#58a6ff','#f0883e','#39d353'];
+  const color = colors[tags.length % colors.length];
+  const id = `tag_${Date.now()}`;
+  tags.push({ id, name: name.trim(), color });
+  saveTags();
+  renderTagSelectChips();
+}
+
+// ── Tag manager modal ──────────────────────────────────────────
+function openTagManager() {
+  renderTagManagerList();
+  openOverlay('tag-manager-modal');
+}
+
+function renderTagManagerList() {
+  const list = el('tag-mgr-list');
+  if (!list) return;
+  list.innerHTML = tags.map((t, i) => `
+    <div class="tag-mgr-row" id="tmrow-${t.id}">
+      <input type="color" class="tag-mgr-color" value="${t.color}"
+             oninput="updateTagColor('${t.id}', this.value)">
+      <input class="tag-mgr-name-input" type="text" value="${esc(t.name)}"
+             oninput="updateTagName('${t.id}', this.value)">
+      <button class="tag-mgr-del" onclick="deleteTag('${t.id}')">✕</button>
+    </div>`).join('');
+}
+
+function updateTagColor(tagId, color) {
+  const tag = getTagById(tagId);
+  if (tag) { tag.color = color; saveTags(); }
+}
+
+function updateTagName(tagId, name) {
+  const tag = getTagById(tagId);
+  if (tag) { tag.name = name; saveTags(); }
+}
+
+function deleteTag(tagId) {
+  if (!confirm('Delete this tag? It will be removed from all sessions.')) return;
+  tags = tags.filter(t => t.id !== tagId);
+  // Remove from session tag map
+  Object.keys(sessionTagMap).forEach(sid => {
+    sessionTagMap[sid] = sessionTagMap[sid].filter(e => e.tagId !== tagId);
+  });
+  saveTags();
+  saveSessionTagMap();
+  renderTagManagerList();
+}
+
+function addNewTag() {
+  const colors = ['#7c3aed','#ec4899','#3fb950','#e3b341','#58a6ff','#f0883e','#39d353'];
+  const color = colors[tags.length % colors.length];
+  const id = `tag_${Date.now()}`;
+  tags.push({ id, name: 'New Tag', color });
+  saveTags();
+  renderTagManagerList();
+  // Focus the new name input
+  setTimeout(() => {
+    const row = el(`tmrow-${id}`);
+    row?.querySelector('.tag-mgr-name-input')?.focus();
+  }, 50);
+}
+
+// ── Tag chart ──────────────────────────────────────────────────
+function renderTagChart(weekSessions) {
+  const section = el('tag-chart-section');
+  const body    = el('tag-chart-body');
+  const lbl     = el('tag-chart-week-label');
+  if (!section || !body) return;
+
+  // Collect tag time totals across the week's sessions
+  const totals = {}; // { tagId: totalSeconds }
+  weekSessions.forEach(s => {
+    const tagEntries = sessionTagMap[s.id] || [];
+    if (tagEntries.length === 1 && tagEntries[0].minutes === 0) {
+      // Single tag with no split — assign full session duration
+      const tid = tagEntries[0].tagId;
+      totals[tid] = (totals[tid] || 0) + s.durationSeconds;
+    } else {
+      tagEntries.forEach(e => {
+        if (e.minutes > 0) {
+          totals[e.tagId] = (totals[e.tagId] || 0) + e.minutes * 60;
+        }
+      });
+    }
+  });
+
+  const entries = Object.entries(totals).filter(([id]) => getTagById(id));
+  if (!entries.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  const maxSecs = Math.max(...entries.map(([,v]) => v));
+  const totalTagSecs = entries.reduce((a, [,v]) => a + v, 0);
+
+  // Update week label
+  if (lbl) {
+    const { mon, sun } = getWeekBounds(viewWeekOffset);
+    const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+    lbl.textContent = viewWeekOffset === 0 ? 'This Week' : `${fmt(mon)} – ${fmt(sun)}`;
+  }
+
+  entries.sort((a, b) => b[1] - a[1]);
+  body.innerHTML = entries.map(([tagId, secs]) => {
+    const tag  = getTagById(tagId);
+    const pct  = maxSecs > 0 ? (secs / maxSecs * 100).toFixed(1) : 0;
+    const pctOfTotal = totalTagSecs > 0 ? Math.round(secs / totalTagSecs * 100) : 0;
+    return `
+      <div class="tag-chart-row">
+        <div class="tag-chart-label" title="${esc(tag.name)}">${esc(tag.name)}</div>
+        <div class="tag-chart-track">
+          <div class="tag-chart-fill" style="width:${pct}%;background:${tag.color}"></div>
+        </div>
+        <div class="tag-chart-val">${fmtHm(secs)} <span style="color:var(--text2)">(${pctOfTotal}%)</span></div>
+      </div>`;
+  }).join('');
 }
 
 function renderLog(sessions, otherSessions = []) {
@@ -1627,17 +2327,23 @@ function renderLog(sessions, otherSessions = []) {
   log.innerHTML = rows.map(s => {
     const t0 = new Date(s.startTime);
     const t1 = new Date(s.endTime);
-    const tag = s.manual ? '<span class="session-manual">manual</span>' : '';
+    const manualTag = s.manual ? '<span class="session-manual">manual</span>' : '';
     const who = showAll
       ? `<span style="color:var(--accent-lt);font-size:11px;margin-right:4px">
            ${settings.names[s.userId] || s.userId}
          </span>` : '';
+    // Tag chips
+    const tagEntries = sessionTagMap[s.id] || [];
+    const chipsHtml = tagEntries.length
+      ? `<div class="tag-chips-row">${tagEntries.map(e => tagChipHtml(e.tagId, e.minutes)).join('')}</div>`
+      : '';
     return `
       <div class="session-row">
-        <div>
+        <div style="flex:1;min-width:0">
           ${who}
-          <div class="session-time">${fmt12(t0)} – ${fmt12(t1)}${tag}</div>
+          <div class="session-time">${fmt12(t0)} – ${fmt12(t1)}${manualTag}</div>
           ${s.note ? `<div class="session-note">${esc(s.note)}</div>` : ''}
+          ${chipsHtml}
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           <div class="session-dur">${fmtHm(s.durationSeconds)}</div>
@@ -1770,6 +2476,7 @@ function init() {
   initFirebase();
   loadSettings();
   loadTimerState();
+  loadTags();
 
   if (!fbReady) el('firebase-banner')?.classList.add('visible');
 
